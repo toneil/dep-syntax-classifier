@@ -51,10 +51,11 @@ def get_categories(parse_vector):
         categories.add(cat)
     return categories
 
-def read_categories(cat_file):
+def read_categories(cat_file_path):
     categories = []
-    for cat in cat_file:
-        categories.append(cat)
+    with open(cat_file_path) as cat_file:
+        for cat in cat_file:
+            categories.append(cat)
     return categories
 
 # Returns all unique tokens, pos_tags and arc labels in parse_vector
@@ -100,20 +101,21 @@ def get_arcs_to_degree(items, start, n):
         index = int(next_item[2])
         n -= 1
     return returned_items
-def make_empty_map(feature_list_file):
-    feature_map = dict()
-    for feature in feature_list_file:
-        feature = feature.strip()
-        feature_map[feature] = 0
-    return feature_map
 
-def make_feature_map(node_depth, arc_depth, doc, empty_feature_map, tokens):
-    feature_map = copy.copy(empty_feature_map)
+def get_feature_list (feature_list_path):
+    feature_list = []
+    with open(feature_list_path) as feature_list_file:
+        for feature in feature_list_file:
+            feature = feature.strip()
+            feature_list.append(feature)
+    return feature_list
+
+def make_feature_map(node_depth, arc_depth, doc, tokens):
+    feature_map = dict()
     for token in tokens:
         if token not in feature_map:
-            feature_map['__UNKNOWN_TOKEN__'] += 1
-        else:
-            feature_map[token] += 1
+            feature_map[token] = 0
+        feature_map[token] += 1
     (cat, sents) = doc
     for sent in sents:
         for (index, item) in enumerate(sent):
@@ -127,7 +129,6 @@ def make_feature_map(node_depth, arc_depth, doc, empty_feature_map, tokens):
                 continue
             combined = arcs + nodes
             if combined not in feature_map:
-                feature_map['__UNKNOWN_PATH__'] += 1
-            else:
-                feature_map[combined] += 1
+                feature_map[combined] = 0
+            feature_map[combined] += 1
     return feature_map

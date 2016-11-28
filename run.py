@@ -52,12 +52,9 @@ if args.feature_set:
 elif args.features_map and args.out:
     # SETUP
     # Get features and target classes
-    with open(args.feature_list) as feature_list_file, open(args.categories) as category_file:
-        empty_feature_map = features.make_empty_map(feature_list_file)
-        categories = features.read_categories(category_file)
+    feature_list = features.get_feature_list(args.feature_list)
+    categories = features.read_categories(args.categories)
     clf = classifier.make_classifier()
-    feature_list = list(empty_feature_map)
-    feature_list.sort()
     # TRAIN ONE SAMPLE
     # Assign category and tag text
     doc = tag.make_doc(args.infile)
@@ -74,7 +71,7 @@ elif args.features_map and args.out:
         parse_v = features.read_parsed_sentences(conll)
         # Get all tokens in doc
         tokens = features.get_tokens(parse_v)
-        feature_map = features.make_feature_map(args.nodes, args.arcs, parse_v[0], empty_feature_map, tokens)
+        feature_map = features.make_feature_map(args.nodes, args.arcs, parse_v[0], tokens)
         feature_vector = vectors.vectorize_map(feature_map, feature_list)
         clf = classifier.train_one_sample(feature_vector, cat, clf, categories)
 
