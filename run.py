@@ -66,7 +66,7 @@ elif args.features_map and args.out:
     tag.write_conll_file(MIDDLE_TAG_DUMP, tagged)
     # Run maltparser
     call(['java' ,'-jar' ,'maltparser-1.8.1/maltparser-1.8.1.jar', '-c' ,'swemalt-1.7.2.mco', '-m' ,'parse' , '-i', MIDDLE_TAG_DUMP, '-o', MIDDLE_MALT_PARSE_DUMP])
-    with open(MIDDLE_MALT_PARSE_DUMP) as conll, open(args.out, 'w') as feature_file:
+    with open(MIDDLE_MALT_PARSE_DUMP) as conll:
         # Get parse vector from parsed file
         parse_v = features.read_parsed_sentences(conll)
         # Get all tokens in doc
