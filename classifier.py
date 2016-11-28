@@ -4,6 +4,7 @@ def train_one_sample(feature_vector, cat, clf_wrapper, categories=None):
     (clf, is_init) = clf_wrapper
     if is_init:
         clf.partial_fit([feature_vector], [cat])
+        return clf_wrapper
     else:
         clf.partial_fit([feature_vector], [cat], categories)
         return (clf, True)
