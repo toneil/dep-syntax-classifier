@@ -1,5 +1,7 @@
 import argparse
-from subprocess import call
+from os import listdir, devnull
+from random import randint, shuffle
+from subprocess import call, STDOUT
 from nltk.tag import HunposTagger
 import tag
 import features
@@ -8,6 +10,7 @@ import classifier
 
 print('==> Imports done')
 
+FNULL = open(devnull, 'w')
 TAG_MODEL_PATH = 'model/suc-suctags.model'
 MIDDLE_TAG_DUMP = 'tagged.conll'
 MIDDLE_MALT_PARSE_DUMP = 'parseoutput.conll'
@@ -31,7 +34,7 @@ if args.feature_set:
     ht = HunposTagger(TAG_MODEL_PATH)
     tagged_list = tag.tag_list(tokenized_list, ht)
     tag.write_conll_file(MIDDLE_TAG_DUMP, tagged_list)
-    call(['java' ,'-jar' ,'maltparser-1.8.1/maltparser-1.8.1.jar', '-c' ,'swemalt-1.7.2.mco', '-m' ,'parse' , '-i', MIDDLE_TAG_DUMP, '-o', MIDDLE_MALT_PARSE_DUMP])
+    call(['java' ,'-jar' ,'maltparser-1.8.1/maltparser-1.8.1.jar', '-c' ,'swemalt-1.7.2.mco', '-m' ,'parse' , '-i', MIDDLE_TAG_DUMP, '-o', MIDDLE_MALT_PARSE_DUMP], stdout=FNULL, stderr=STDOUT)
     # Extract and write categories and features to file
     with open(MIDDLE_MALT_PARSE_DUMP) as conll_file, \
          open(args.feature_list, 'w') as feature_file, \
@@ -49,30 +52,49 @@ if args.feature_set:
         for feature in feature_set:
             print(feature, file=feature_file)
 
-elif args.features_map and args.out:
+elif args.features_map:
     # SETUP
     # Get features and target classes
     feature_list = features.get_feature_list(args.feature_list)
     categories = features.read_categories(args.categories)
-    clf = classifier.make_classifier()
-    # TRAIN ONE SAMPLE
-    # Assign category and tag text
-    doc = tag.make_doc(args.infile)
-    cat = doc['cat']
-    tokenized = tag.tokenize(doc)
     ht = HunposTagger(TAG_MODEL_PATH)
-    tagged = tag.tag(tokenized, ht)
-    # Write to intermediary conll file
-    tag.write_conll_file(MIDDLE_TAG_DUMP, tagged)
-    # Run maltparser
-    call(['java' ,'-jar' ,'maltparser-1.8.1/maltparser-1.8.1.jar', '-c' ,'swemalt-1.7.2.mco', '-m' ,'parse' , '-i', MIDDLE_TAG_DUMP, '-o', MIDDLE_MALT_PARSE_DUMP])
-    with open(MIDDLE_MALT_PARSE_DUMP) as conll:
-        # Get parse vector from parsed file
-        parse_v = features.read_parsed_sentences(conll)
-        # Get all tokens in doc
-        tokens = features.get_tokens(parse_v)
-        feature_map = features.make_feature_map(args.nodes, args.arcs, parse_v[0], tokens)
-        feature_vector = vectors.vectorize_map(feature_map, feature_list)
-        clf = classifier.train_one_sample(feature_vector, cat, clf, categories)
-
-        print(cat, classifier.predict_one(feature_vector, clf))
+    clf = classifier.make_classifier()
+    doc_paths = tag.get_doc_paths(args.infile)
+    shuffle(doc_paths)
+    no_of_docs = len(doc_paths)
+    doc_counter = 0
+    test_matrix = []
+    test_targets = []
+    # TRAIN ON ONE SAMPLE
+    for doc_path in doc_paths:
+        doc_counter += 1
+        print()
+        print("==> Doc {} of {}".format(doc_counter, no_of_docs))
+        doc = tag.make_doc(doc_path)
+        cat = doc['cat']
+        tokenized = tag.tokenize(doc)
+        tagged = tag.tag(tokenized, ht)
+        # Write to intermediary conll file
+        tag.write_conll_file(MIDDLE_TAG_DUMP, tagged)
+        print("==> Running MaltParser")
+        call(['java' ,'-jar' ,'maltparser-1.8.1/maltparser-1.8.1.jar', '-c' ,'swemalt-1.7.2.mco', '-m' ,'parse' , '-i', MIDDLE_TAG_DUMP, '-o', MIDDLE_MALT_PARSE_DUMP], stdout=FNULL, stderr=STDOUT)
+        with open(MIDDLE_MALT_PARSE_DUMP) as conll:
+            # Get parse vector from parsed file
+            parse_v = features.read_parsed_sentences(conll)
+            print("==> Extracting features")
+            tokens = features.get_tokens(parse_v)
+            feature_map = features.make_feature_map(args.nodes, args.arcs, parse_v[0], tokens)
+            feature_vector = vectors.vectorize_map(feature_map, feature_list)
+            # Set aside random samples for test set
+            if randint(0, 9) < 2:
+                print("==> Adding {} to test set".format(doc_path))
+                test_matrix.append(feature_vector)
+                test_targets.append(cat)
+            else:
+                clf = classifier.train_one_sample(feature_vector, cat, clf, categories)
+    # TEST
+    print('==> Testing on {} docs out of {}'.format(len(test_targets, no_of_docs)))
+    for (target, feature_vector) in zip(test_targets, test_matrix):
+        predicted = classifier.predict_one(feature_vector, clf)
+        print("{} => {}".format(target, predicted))
+    print(classifier.score(test_matrix, test_targets, clf))
