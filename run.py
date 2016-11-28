@@ -93,7 +93,7 @@ elif args.features_map:
             else:
                 clf = classifier.train_one_sample(feature_vector, cat, clf, categories)
     # TEST
-    print('==> Testing on {} docs out of {}'.format(len(test_targets, no_of_docs)))
+    print('==> Testing on {} docs out of {}'.format(len(test_targets), no_of_docs))
     for (target, feature_vector) in zip(test_targets, test_matrix):
         predicted = classifier.predict_one(feature_vector, clf)
         print("{} => {}".format(target, predicted))
