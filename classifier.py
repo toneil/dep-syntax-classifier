@@ -19,3 +19,7 @@ def write_to_file(classifier, path):
 def predict_one(feature_vector, clf_wrapper):
     (clf, _) = clf_wrapper
     return clf.predict([feature_vector])
+
+def score(feature_matrix, target_vector, clf_wrapper):
+    (clf, _) = clf_wrapper
+    return clf.score(feature_matrix, target_vector)
