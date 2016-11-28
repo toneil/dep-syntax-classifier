@@ -4,6 +4,16 @@ import nltk
 from nltk.tag import HunposTagger
 from nltk import word_tokenize
 
+def get_doc_paths(dir_path):
+    doc_filenames = listdir(dir_path)
+    doc_paths = []
+    for doc_name in doc_filenames:
+        if doc_name.startswith('.'):
+            continue
+        doc_path = dir_path + '/' + doc_name
+        doc_paths.append(doc_path)
+    return doc_paths
+
 def get_cat(docname):
     pattern = r'.*?\w+02([A-Za-z]+)\d+'
     m = re.match(pattern, docname)
@@ -28,9 +38,8 @@ def stripText(text):
 
 def make_doc_list(doc_dir_path):
     doclist = []
-    doc_filenames = listdir(doc_dir_path)
-    for doc_name in doc_filenames:
-        doc_path = doc_dir_path + '/' + doc_name
+    doc_paths = get_doc_paths(doc_dir_path)
+    for doc_path in doc_paths:
         doc = make_doc(doc_path)
         doclist.append(doc)
     return doclist
