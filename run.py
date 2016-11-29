@@ -8,10 +8,6 @@ import features
 import vectors
 import classifier
 
-if not environ['HUNPOS_TAGGER']:
-    print('$HUNPOS_TAGGER not set, exiting...')
-    exit()
-
 print('==> Imports done')
 
 FNULL = open(devnull, 'w')
@@ -35,7 +31,7 @@ args = parser.parse_args()
 if args.feature_set:
     doc_list = tag.make_doc_list(args.infile)
     tokenized_list = tag.tokenize_list(doc_list)
-    ht = HunposTagger(TAG_MODEL_PATH)
+    ht = HunposTagger(TAG_MODEL_PATH, encoding='utf-8')
     tagged_list = tag.tag_list(tokenized_list, ht)
     tag.write_conll_file(MIDDLE_TAG_DUMP, tagged_list)
     call(['java' ,'-jar' ,'tools/maltparser/maltparser-1.8.1.jar', '-c' ,'swemalt-1.7.2.mco', '-m' ,'parse' , '-i', MIDDLE_TAG_DUMP, '-o', MIDDLE_MALT_PARSE_DUMP], stdout=FNULL)
