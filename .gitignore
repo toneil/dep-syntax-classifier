@@ -1,6 +1,4 @@
-*
-!.gitignore
-!*.py
-!swemalt-1.7.2.mco
-!model
-!maltparser-1.8.1
+node_modules
+__pycache__
+data
+products
