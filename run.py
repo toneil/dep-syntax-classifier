@@ -22,13 +22,14 @@ parser.add_argument('-s', '--feature_set', action="store_true")
 parser.add_argument('-f', '--feature_list', type=str)
 parser.add_argument('-c', '--categories', type=str)
 parser.add_argument('-i', '--infile', type=str)
-parser.add_argument('-o', '--out', type=str)
+parser.add_argument('-o', '--outfile', type=str)
 parser.add_argument('-n', '--nodes', type=int)
 parser.add_argument('-a', '--arcs', type=int)
 
 args = parser.parse_args()
 
 if args.feature_set:
+    print("==> Making doc list")
     doc_list = tag.make_doc_list(args.infile)
     tokenized_list = tag.tokenize_list(doc_list)
     ht = HunposTagger(TAG_MODEL_PATH, encoding='utf-8')
@@ -98,3 +99,8 @@ elif args.features_map:
         predicted = classifier.predict_one(feature_vector, clf)
         print("{} => {}".format(target, predicted))
     print(classifier.score(test_matrix, test_targets, clf))
+
+    # SAVE MODEL TO FILE
+    print('==> Saving model to {}'.format(args.outfile))
+    classifier.write_to_file(clf, args.outfile)
+    print('==> Model saved')
