@@ -1,5 +1,5 @@
 import argparse
-from os import listdir, devnull
+from os import listdir, devnull, environ
 from random import randint, shuffle
 from subprocess import call, STDOUT
 from nltk.tag import HunposTagger
@@ -8,12 +8,16 @@ import features
 import vectors
 import classifier
 
+if not environ['HUNPOS_TAGGER']:
+    print('$HUNPOS_TAGGER not set, exiting...')
+    exit()
+
 print('==> Imports done')
 
 FNULL = open(devnull, 'w')
-TAG_MODEL_PATH = 'model/suc-suctags.model'
-MIDDLE_TAG_DUMP = 'tagged.conll'
-MIDDLE_MALT_PARSE_DUMP = 'parseoutput.conll'
+TAG_MODEL_PATH = 'tools/suc-suctags.model'
+MIDDLE_TAG_DUMP = 'products/tagged.conll'
+MIDDLE_MALT_PARSE_DUMP = 'products/parseoutput.conll'
 
 parser = argparse.ArgumentParser()
 
@@ -34,7 +38,7 @@ if args.feature_set:
     ht = HunposTagger(TAG_MODEL_PATH)
     tagged_list = tag.tag_list(tokenized_list, ht)
     tag.write_conll_file(MIDDLE_TAG_DUMP, tagged_list)
-    call(['java' ,'-jar' ,'maltparser-1.8.1/maltparser-1.8.1.jar', '-c' ,'swemalt-1.7.2.mco', '-m' ,'parse' , '-i', MIDDLE_TAG_DUMP, '-o', MIDDLE_MALT_PARSE_DUMP], stdout=FNULL, stderr=STDOUT)
+    call(['java' ,'-jar' ,'tools/maltparser/maltparser-1.8.1.jar', '-c' ,'swemalt-1.7.2.mco', '-m' ,'parse' , '-i', MIDDLE_TAG_DUMP, '-o', MIDDLE_MALT_PARSE_DUMP], stdout=FNULL)
     # Extract and write categories and features to file
     with open(MIDDLE_MALT_PARSE_DUMP) as conll_file, \
          open(args.feature_list, 'w') as feature_file, \
@@ -77,7 +81,7 @@ elif args.features_map:
         # Write to intermediary conll file
         tag.write_conll_file(MIDDLE_TAG_DUMP, tagged)
         print("==> Running MaltParser")
-        call(['java' ,'-jar' ,'maltparser-1.8.1/maltparser-1.8.1.jar', '-c' ,'swemalt-1.7.2.mco', '-m' ,'parse' , '-i', MIDDLE_TAG_DUMP, '-o', MIDDLE_MALT_PARSE_DUMP], stdout=FNULL, stderr=STDOUT)
+        call(['java' ,'-jar' ,'tools/maltparser/maltparser-1.8.1.jar', '-c' ,'swemalt-1.7.2.mco', '-m' ,'parse' , '-i', MIDDLE_TAG_DUMP, '-o', MIDDLE_MALT_PARSE_DUMP], stdout=FNULL)
         with open(MIDDLE_MALT_PARSE_DUMP) as conll:
             # Get parse vector from parsed file
             parse_v = features.read_parsed_sentences(conll)
